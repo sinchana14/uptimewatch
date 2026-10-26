@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:uptimewatch-test;DB_CLOSE_DELAY=-1
+
+uptimewatch:
+  api-key: test-key
+  # Keep the scheduler from making real network calls during tests.
+  scheduler-initial-delay-ms: 3600000
+  scheduler-tick-ms: 3600000
+  default-timeout-ms: 2000
+  seed-monitors: []

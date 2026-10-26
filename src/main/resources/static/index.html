@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Live uptime, response time and SSL status for popular Indian and global services.">
+    <title>UptimeWatch Status</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='12' fill='%2312b76a'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip" href="#services">Skip to services</a>
+
+<header class="topbar">
+    <div class="wrap topbar-inner">
+        <a class="brand" href="#top" aria-label="UptimeWatch home">
+            <span class="logo" aria-hidden="true"></span>
+            <span>UptimeWatch</span>
+        </a>
+        <nav class="nav" aria-label="Main">
+            <a href="#services">Services</a>
+            <a href="#incidents">Incidents</a>
+            <a href="#help">Help</a>
+        </nav>
+        <div class="actions">
+            <button class="btn btn-ghost icon-btn" id="themeToggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
+            <button class="btn btn-primary" id="addSiteBtn" type="button">+ Add site</button>
+        </div>
+    </div>
+</header>
+
+<main id="top" class="wrap">
+    <section id="hero" class="hero hero-unknown" role="status" aria-live="polite">
+        <div class="hero-icon" id="heroIcon" aria-hidden="true">…</div>
+        <div>
+            <h1 id="heroTitle">Checking services…</h1>
+            <p id="heroSub">Live status of popular Indian and global services, checked every minute.</p>
+        </div>
+    </section>
+
+    <section class="stats-grid" aria-label="Summary">
+        <div class="stat"><span class="stat-label">Services monitored</span><span class="stat-value" id="statTotal">–</span></div>
+        <div class="stat"><span class="stat-label">Operational</span><span class="stat-value ok" id="statUp">–</span></div>
+        <div class="stat"><span class="stat-label">Down</span><span class="stat-value bad" id="statDown">–</span></div>
+        <div class="stat"><span class="stat-label">Avg response (24h)</span><span class="stat-value" id="statAvg">–</span></div>
+        <div class="stat"><span class="stat-label">Overall uptime (24h)</span><span class="stat-value" id="statUptime">–</span></div>
+    </section>
+
+    <section id="services" class="panel">
+        <div class="panel-head">
+            <h2>Services</h2>
+            <span class="muted small" id="updated">Loading…</span>
+        </div>
+        <div class="toolbar">
+            <label class="search">
+                <span class="visually-hidden">Search services</span>
+                <input id="search" type="search" placeholder="Search by name or URL…" autocomplete="off">
+            </label>
+            <div class="chips" role="group" aria-label="Filter by status">
+                <button class="chip active" data-filter="all" type="button">All</button>
+                <button class="chip" data-filter="UP" type="button">Up</button>
+                <button class="chip" data-filter="DOWN" type="button">Down</button>
+            </div>
+            <label class="select">
+                <span class="visually-hidden">Category</span>
+                <select id="categoryFilter"><option value="">All categories</option></select>
+            </label>
+        </div>
+        <div id="groups"></div>
+        <p class="empty" id="emptyState" hidden>No services match your search.</p>
+    </section>
+
+    <section id="incidents" class="panel">
+        <div class="panel-head">
+            <h2>Recent incidents</h2>
+            <span class="muted small">An incident starts after 2 failed checks in a row</span>
+        </div>
+        <ul class="incidents" id="incidentList"></ul>
+    </section>
+
+    <section id="help" class="panel help">
+        <div class="panel-head"><h2>How to read this page</h2></div>
+        <div class="help-grid">
+            <div>
+                <h3>Status code</h3>
+                <p>The 3-digit answer a website sends back. <b>2xx</b> means OK and <b>3xx</b> is a redirect, so both count as up. <b>4xx</b> (refused or not found) and <b>5xx</b> (server broken) count as down. No code at all means the site didn't answer.</p>
+            </div>
+            <div>
+                <h3>Response time</h3>
+                <p>How long the site took to answer, in milliseconds (1000 ms = 1 s). Under 500 ms is fast and over 3 s feels slow. Rising response times are often the first sign of trouble.</p>
+            </div>
+            <div>
+                <h3>SSL expiry</h3>
+                <p>Days until the site's HTTPS certificate (the 🔒) expires. If it isn't renewed in time, browsers show "Your connection is not private". You get a warning 14 days ahead.</p>
+            </div>
+            <div>
+                <h3>Uptime %</h3>
+                <p>The share of checks that succeeded. 99.9% over a month means about 43 minutes of downtime. The coloured bars show the last 30 checks, newest on the right.</p>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="wrap footer">
+    Built with Spring Boot · Checks every 60 s from Bengaluru, India · Some sites that block automated checks are not listed
+</footer>
+
+<!-- Monitor details -->
+<dialog id="detailDialog" class="dialog dialog-wide" aria-labelledby="detailTitle">
+    <div class="dialog-head">
+        <div>
+            <h2 id="detailTitle">Service</h2>
+            <a id="detailUrl" class="muted small" href="#" target="_blank" rel="noopener noreferrer"></a>
+        </div>
+        <button class="btn btn-ghost icon-btn" type="button" data-close aria-label="Close">✕</button>
+    </div>
+    <div id="detailBody" class="dialog-body"></div>
+    <div class="dialog-foot admin-only" hidden>
+        <button class="btn btn-danger" id="deleteBtn" type="button">Remove this site</button>
+    </div>
+</dialog>
+
+<!-- Add site -->
+<dialog id="addDialog" class="dialog" aria-labelledby="addTitle">
+    <form id="addForm" method="dialog" novalidate>
+        <div class="dialog-head">
+            <h2 id="addTitle">Add a site to monitor</h2>
+            <button class="btn btn-ghost icon-btn" type="button" data-close aria-label="Close">✕</button>
+        </div>
+        <div class="dialog-body form">
+            <label>Name
+                <input name="name" required maxlength="100" placeholder="My Portfolio">
+            </label>
+            <label>URL
+                <input name="url" type="url" required placeholder="https://example.com">
+            </label>
+            <label>Category
+                <input name="category" list="categoryOptions" maxlength="60" placeholder="Other">
+                <datalist id="categoryOptions"></datalist>
+            </label>
+            <label>Check every
+                <select name="intervalSeconds">
+                    <option value="30">30 seconds</option>
+                    <option value="60" selected>1 minute</option>
+                    <option value="300">5 minutes</option>
+                    <option value="900">15 minutes</option>
+                </select>
+            </label>
+            <label>Admin key
+                <input name="apiKey" type="password" required autocomplete="current-password" placeholder="Only the owner can add sites">
+            </label>
+            <p class="form-error" id="addError" role="alert" hidden></p>
+        </div>
+        <div class="dialog-foot">
+            <button class="btn btn-ghost" type="button" data-close>Cancel</button>
+            <button class="btn btn-primary" type="submit" id="addSubmit">Add site</button>
+        </div>
+    </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>

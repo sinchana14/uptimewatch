@@ -1,0 +1,10 @@
+target/
+data/
+*.log
+.idea/
+*.iml
+.vscode/
+.env
+.env.local
+tunnel.log
+app.log.err

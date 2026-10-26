@@ -1,0 +1,79 @@
+server:
+  port: ${PORT:8080}
+  # Trust X-Forwarded-* headers from a tunnel or reverse proxy (Cloudflare, Nginx).
+  forward-headers-strategy: framework
+
+spring:
+  application:
+    name: uptimewatch
+  datasource:
+    # File-based H2 so check history survives restarts during local development.
+    url: jdbc:h2:file:./data/uptimewatch;AUTO_SERVER=TRUE
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+uptimewatch:
+  # Required header (X-Api-Key) for adding or removing monitors.
+  # Always set UPTIMEWATCH_API_KEY to a long random value before exposing the app publicly.
+  api-key: ${UPTIMEWATCH_API_KEY:dev-key-change-me}
+  scheduler-tick-ms: 10000
+  checker-threads: 8
+  default-timeout-ms: 10000
+  retention-days: 30
+  failure-threshold: 2
+  ssl-warning-days: 14
+  public-url: ${UPTIMEWATCH_PUBLIC_URL:}
+  telegram:
+    bot-token: ${TELEGRAM_BOT_TOKEN:}
+    chat-id: ${TELEGRAM_CHAT_ID:}
+    api-base: https://api.telegram.org
+  # Loaded only when the database has no monitors yet. Sites that block automated
+  # checks (they answer 403 or time out) are left out to avoid false alarms.
+  seed-monitors:
+    - { category: "India Public Services", name: "Income Tax e-Filing", url: "https://www.incometax.gov.in" }
+    - { category: "India Public Services", name: "DigiLocker", url: "https://www.digilocker.gov.in" }
+    - { category: "India Public Services", name: "UIDAI (Aadhaar)", url: "https://uidai.gov.in" }
+    - { category: "India Public Services", name: "Passport Seva", url: "https://www.passportindia.gov.in" }
+    - { category: "India Public Services", name: "EPFO", url: "https://www.epfindia.gov.in" }
+    - { category: "India Public Services", name: "GST Portal", url: "https://www.gst.gov.in" }
+    - { category: "India Public Services", name: "National Portal of India", url: "https://www.india.gov.in" }
+    - { category: "India Public Services", name: "ISRO", url: "https://www.isro.gov.in" }
+    - { category: "Shopping & Food", name: "Amazon India", url: "https://www.amazon.in" }
+    - { category: "Shopping & Food", name: "Flipkart", url: "https://www.flipkart.com" }
+    - { category: "Shopping & Food", name: "Zomato", url: "https://www.zomato.com" }
+    - { category: "Jobs & Social", name: "LinkedIn", url: "https://www.linkedin.com" }
+    - { category: "Jobs & Social", name: "Naukri", url: "https://www.naukri.com" }
+    - { category: "Developer Tools", name: "GitHub", url: "https://github.com" }
+    - { category: "Developer Tools", name: "GitHub API", url: "https://api.github.com" }
+    - { category: "Developer Tools", name: "GitLab", url: "https://gitlab.com" }
+    - { category: "Developer Tools", name: "npm Registry", url: "https://registry.npmjs.org" }
+    - { category: "Developer Tools", name: "PyPI", url: "https://pypi.org" }
+    - { category: "Developer Tools", name: "Docker Hub", url: "https://hub.docker.com" }
+    - { category: "Developer Tools", name: "Maven Central", url: "https://repo1.maven.org/maven2/" }
+    - { category: "Cloud Providers", name: "AWS", url: "https://aws.amazon.com" }
+    - { category: "Cloud Providers", name: "Microsoft Azure", url: "https://azure.microsoft.com" }
+    - { category: "Cloud Providers", name: "Google Cloud", url: "https://cloud.google.com" }
+    - { category: "Cloud Providers", name: "Cloudflare", url: "https://www.cloudflare.com" }
+    - { category: "Cloud Providers", name: "Cloudflare DNS (1.1.1.1)", url: "https://1.1.1.1" }
+    - { category: "Popular Websites", name: "Google", url: "https://www.google.com" }
+    - { category: "Popular Websites", name: "YouTube", url: "https://www.youtube.com" }
+    - { category: "Popular Websites", name: "Wikipedia", url: "https://www.wikipedia.org" }
+    - { category: "Popular Websites", name: "Netflix", url: "https://www.netflix.com" }
+    - { category: "Popular Websites", name: "Spotify", url: "https://www.spotify.com" }
+    - { category: "Work & Collaboration", name: "Slack", url: "https://slack.com" }
+    - { category: "Work & Collaboration", name: "Zoom", url: "https://zoom.us" }
+    - { category: "Work & Collaboration", name: "Atlassian", url: "https://www.atlassian.com" }
+
+---
+spring:
+  config:
+    activate:
+      on-profile: postgres
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/uptimewatch}
+    username: ${DATABASE_USERNAME:uptimewatch}
+    password: ${DATABASE_PASSWORD:uptimewatch}
