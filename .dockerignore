@@ -1,0 +1,13 @@
+target/
+data/
+*.log
+*.log.err
+.env
+.env.local
+.git/
+.github/
+.idea/
+.vscode/
+monitoring/
+docker-compose.yml
+*.ps1

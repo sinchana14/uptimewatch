@@ -2,6 +2,7 @@ package com.uptimewatch.check;
 
 import com.uptimewatch.alert.AlertService;
 import com.uptimewatch.config.UptimeWatchProperties;
+import com.uptimewatch.metrics.UptimeWatchMetrics;
 import com.uptimewatch.monitor.Monitor;
 import com.uptimewatch.monitor.MonitorRepository;
 import com.uptimewatch.monitor.MonitorService;
@@ -30,15 +31,17 @@ public class CheckScheduler {
     private final MonitorService monitorService;
     private final HttpChecker checker;
     private final AlertService alerts;
+    private final UptimeWatchMetrics metrics;
     private final ExecutorService pool;
     private final Set<Long> inFlight = ConcurrentHashMap.newKeySet();
 
-    public CheckScheduler(MonitorRepository monitors, MonitorService monitorService,
-                          HttpChecker checker, AlertService alerts, UptimeWatchProperties properties) {
+    public CheckScheduler(MonitorRepository monitors, MonitorService monitorService, HttpChecker checker,
+                          AlertService alerts, UptimeWatchMetrics metrics, UptimeWatchProperties properties) {
         this.monitors = monitors;
         this.monitorService = monitorService;
         this.checker = checker;
         this.alerts = alerts;
+        this.metrics = metrics;
         this.pool = Executors.newFixedThreadPool(properties.checkerThreads());
     }
 
@@ -51,11 +54,15 @@ public class CheckScheduler {
             if (monitor.isDue(now) && inFlight.add(monitor.getId())) {
                 Long id = monitor.getId();
                 String url = monitor.getUrl();
+                String name = monitor.getName();
+                String category = monitor.getCategory();
                 pool.submit(() -> {
                     try {
+                        ProbeOutcome outcome = checker.check(url);
+                        metrics.recordCheck(name, category, outcome.up(), outcome.responseTimeMs());
                         // recordResult has committed by the time it returns, so alerts never
                         // describe data that was rolled back.
-                        alerts.dispatch(monitorService.recordResult(id, checker.check(url)));
+                        alerts.dispatch(monitorService.recordResult(id, outcome));
                     } catch (Exception e) {
                         log.error("Check failed for monitor {} ({})", id, url, e);
                     } finally {

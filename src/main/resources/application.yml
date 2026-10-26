@@ -16,6 +16,23 @@ spring:
       ddl-auto: update
     open-in-view: false
 
+# Health and metrics live on their own port. The public tunnel only forwards 8080,
+# so /actuator/prometheus is reachable by Prometheus but never by the internet.
+management:
+  server:
+    port: ${MANAGEMENT_PORT:8081}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: uptimewatch
+
 uptimewatch:
   # Required header (X-Api-Key) for adding or removing monitors.
   # Always set UPTIMEWATCH_API_KEY to a long random value before exposing the app publicly.

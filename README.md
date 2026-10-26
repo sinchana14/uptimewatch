@@ -1,13 +1,15 @@
 # UptimeWatch
 
+[![CI](https://github.com/sinchana14/uptimewatch/actions/workflows/ci.yml/badge.svg)](https://github.com/sinchana14/uptimewatch/actions/workflows/ci.yml)
+
 A self-hosted uptime monitor with a public status page. UptimeWatch checks websites and APIs
 every minute, records response times and failures, tracks SSL certificate expiry, and shows
 live status with 24-hour and 7-day uptime on a public page.
 
-> Status: **Week 2 complete**: 33 real Indian and global services, incidents, Telegram alerts,
-> SSL expiry warnings and a redesigned status page.
-> Coming next: Docker + CI + Prometheus/Grafana (week 3), live deployment on Oracle Cloud
-> Always Free (week 4).
+> Status: **Week 3 complete**: Docker image, a full Docker Compose stack with PostgreSQL,
+> Prometheus and Grafana, and a GitHub Actions pipeline that tests, smoke-tests the whole
+> stack, scans the image and publishes it to GHCR.
+> Coming next: live deployment on Oracle Cloud Always Free (week 4).
 
 ## Features
 
@@ -44,13 +46,60 @@ live status with 24-hour and 7-day uptime on a public page.
             │                       • updates Monitor snapshot / status flip    │
             │                                             │                     │
             │   MonitorController  ◄── /api/monitors ─────┤                     │
+            │   Actuator :8081     ──► /actuator/prometheus ┼──► Prometheus ──► Grafana
             │   static status page ◄── index.html + app.js│                     │
             └─────────────────────────────────────────────┼─────────────────────┘
                                                           ▼
                                        H2 (local dev) / PostgreSQL (production)
 ```
 
-## Run locally
+## Run the full stack with Docker
+
+```bash
+docker compose up -d --build
+```
+
+| Service | URL | Notes |
+|---|---|---|
+| Status page | http://localhost:8080 | |
+| Prometheus | http://localhost:9090 | Alerts tab shows `SiteDown`, `SiteSlow`, `SslCertificateExpiringSoon`, ... |
+| Grafana | http://localhost:3000 | Opens on the **UptimeWatch Overview** dashboard (login `admin` / `admin` to edit) |
+
+Secrets (`UPTIMEWATCH_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`) are read from the
+git-ignored `.env.local`. All ports are bound to `127.0.0.1`, so nothing is exposed to your network.
+
+The image is also published by CI: `docker pull ghcr.io/sinchana14/uptimewatch:latest`.
+
+## Observability
+
+The app exposes health checks and Prometheus metrics on a **separate management port (8081)**.
+The public port 8080 (and the Cloudflare tunnel) never serves `/actuator/*`.
+
+| Metric | Type | Meaning |
+|---|---|---|
+| `uptimewatch_monitor_up` | gauge | 1 = UP, 0 = DOWN, per monitor and category |
+| `uptimewatch_check_duration_seconds` | histogram | Response time of every check, by monitor and result |
+| `uptimewatch_monitor_ssl_days_left` | gauge | Days until each TLS certificate expires |
+| `uptimewatch_incidents_open` | gauge | Outages currently in progress |
+| `uptimewatch_alerts_sent_total` | counter | Alerts by type, channel and success/failure |
+
+Prometheus alert rules (`monitoring/prometheus/alerts.yml`) include **UptimeWatchDown**, which
+watches the watcher: if the app itself stops, no site alerts can go out.
+
+## CI/CD (GitHub Actions)
+
+Every push runs `.github/workflows/ci.yml`:
+
+1. **Build and test**: `mvn verify` (21 tests)
+2. **Validate config**: `docker compose config`, `promtool check config` for the Prometheus
+   config and alert rules, and a JSON check for the Grafana dashboard
+3. **Full-stack smoke test**: builds the image, starts app + PostgreSQL + Prometheus + Grafana,
+   then checks that the status page answers, the write API is protected, metrics are not public,
+   Prometheus is scraping the app, and the Grafana dashboard loads
+4. **Trivy image scan**: HIGH/CRITICAL vulnerabilities with available fixes (report only for now)
+5. **Publish**: on `main`, pushes `ghcr.io/sinchana14/uptimewatch:latest` and a `sha-xxxxxxx` tag
+
+## Run locally without Docker
 
 Requirements: Java 17 and Maven.
 
@@ -139,9 +188,10 @@ mvn test
 - `MonitorTest` covers confirmed-down logic, recoveries, intervals and SSL warnings
 - `MonitorApiTest` covers the REST API, API-key protection, validation, uptime maths,
   incident lifecycle and the alerts each outage produces
+- `UptimeWatchMetricsTest` checks the Prometheus output and the health endpoint
 - `TelegramNotifierTest` checks the Bot API request against a fake Telegram server and makes
   sure errors never leak the bot token
 
 ## Tech stack
 
-Java 17 · Spring Boot 3 · Spring Data JPA · H2 / PostgreSQL · java.net.http · Vanilla JS · JUnit 5
+Java 17 · Spring Boot 3 · Spring Data JPA · H2 / PostgreSQL · Micrometer · Prometheus · Grafana · Docker · GitHub Actions · Trivy · Vanilla JS · JUnit 5

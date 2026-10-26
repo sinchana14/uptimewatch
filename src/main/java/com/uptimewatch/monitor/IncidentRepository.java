@@ -14,6 +14,9 @@ public interface IncidentRepository extends JpaRepository<Incident, Long> {
     @Query("select i from Incident i where i.monitor.id = :monitorId and i.resolvedAt is null")
     Optional<Incident> findOpen(@Param("monitorId") Long monitorId);
 
+    @Query("select count(i) from Incident i where i.resolvedAt is null")
+    long countOpen();
+
     @Query("select i from Incident i join fetch i.monitor order by i.startedAt desc")
     List<Incident> findRecent(Pageable pageable);
 

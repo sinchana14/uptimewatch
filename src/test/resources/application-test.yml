@@ -2,6 +2,11 @@ spring:
   datasource:
     url: jdbc:h2:mem:uptimewatch-test;DB_CLOSE_DELAY=-1
 
+# Serve actuator on the main (mock) port so MockMvc can reach /actuator/prometheus.
+management:
+  server:
+    port: ""
+
 uptimewatch:
   api-key: test-key
   # Keep the scheduler from making real network calls during tests.

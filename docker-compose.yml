@@ -1,0 +1,82 @@
+# Full UptimeWatch stack: app + PostgreSQL + Prometheus + Grafana.
+#   docker compose up -d --build
+# Status page  http://localhost:8080
+# Prometheus   http://localhost:9090
+# Grafana      http://localhost:3000   (dashboard: UptimeWatch Overview)
+#
+# Secrets come from .env.local (git-ignored): UPTIMEWATCH_API_KEY, TELEGRAM_BOT_TOKEN,
+# TELEGRAM_CHAT_ID and optionally POSTGRES_PASSWORD / GRAFANA_ADMIN_PASSWORD.
+# Every port is bound to 127.0.0.1 so nothing is exposed to your Wi-Fi network.
+
+name: uptimewatch
+
+services:
+  app:
+    build: .
+    image: uptimewatch:local
+    restart: unless-stopped
+    env_file:
+      - path: .env.local
+        required: false
+    environment:
+      SPRING_PROFILES_ACTIVE: postgres
+      DATABASE_URL: jdbc:postgresql://db:5432/uptimewatch
+      DATABASE_USERNAME: uptimewatch
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-uptimewatch}
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16.4-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: uptimewatch
+      POSTGRES_USER: uptimewatch
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-uptimewatch}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U uptimewatch -d uptimewatch"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=15d
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus:ro
+      - promdata:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    depends_on:
+      - app
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/uptimewatch.json
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafanadata:/var/lib/grafana
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - prometheus
+
+volumes:
+  pgdata:
+  promdata:
+  grafanadata:

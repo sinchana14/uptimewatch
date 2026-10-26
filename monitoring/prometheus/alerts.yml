@@ -1,0 +1,48 @@
+groups:
+  - name: uptimewatch
+    rules:
+      # Watch the watcher: if UptimeWatch itself dies, nobody gets Telegram alerts.
+      - alert: UptimeWatchDown
+        expr: up{job="uptimewatch"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "UptimeWatch is not responding to Prometheus"
+          description: "No metrics from the app for over 1 minute. Site alerts are not being sent."
+
+      - alert: SiteDown
+        expr: uptimewatch_monitor_up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.monitor }} is down"
+          description: "{{ $labels.monitor }} ({{ $labels.category }}) has been DOWN for more than 2 minutes."
+
+      - alert: SiteSlow
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le, monitor) (rate(uptimewatch_check_duration_seconds_bucket{result="up"}[10m]))
+          ) > 3
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.monitor }} is slow"
+          description: "p95 response time of {{ $labels.monitor }} is above 3 s for 10 minutes."
+
+      - alert: SslCertificateExpiringSoon
+        expr: uptimewatch_monitor_ssl_days_left < 14
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "SSL certificate for {{ $labels.monitor }} expires in {{ $value }} days"
+
+      - alert: AlertDeliveryFailing
+        expr: increase(uptimewatch_alerts_sent_total{outcome="failure"}[15m]) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "Alerts are failing to send via {{ $labels.channel }}"
