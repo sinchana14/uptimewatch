@@ -11,7 +11,17 @@ $tunnelLog = Join-Path $here "tunnel.log"
 $appLog = Join-Path $here "app.log"
 
 if (-not (Test-Path $cloudflared)) { throw "cloudflared.exe not found at $cloudflared" }
-if (-not (Test-Path $jar)) { Write-Host "Building the app..."; Push-Location $here; mvn -q -B package -DskipTests; Pop-Location }
+# Rebuild when the jar is missing or older than the code (e.g. after a git pull).
+$newestSource = Get-ChildItem (Join-Path $here "src"), (Join-Path $here "pom.xml") -Recurse -File |
+    Sort-Object LastWriteTime -Descending | Select-Object -First 1
+if (-not (Test-Path $jar) -or $newestSource.LastWriteTime -gt (Get-Item $jar).LastWriteTime) {
+    Write-Host "Building the latest version of the app (takes about a minute)..."
+    Push-Location $here
+    mvn -q -B package -DskipTests
+    $ok = $?
+    Pop-Location
+    if (-not $ok) { throw "Build failed. Run 'mvn package' in this folder to see why." }
+}
 
 # Never go public with the default dev key: create a random admin key on first run.
 if (-not (Test-Path $envFile)) {
