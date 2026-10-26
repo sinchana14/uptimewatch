@@ -1,6 +1,6 @@
 package com.uptimewatch.alert;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import com.uptimewatch.config.UptimeWatchProperties;
 import org.springframework.stereotype.Component;
 
@@ -21,12 +21,12 @@ public class TelegramNotifier implements Notifier {
 
     private final UptimeWatchProperties.Telegram config;
     private final String publicUrl;
-    private final ObjectMapper json;
+    private final JsonMapper json;
     private final HttpClient client = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
-    public TelegramNotifier(UptimeWatchProperties properties, ObjectMapper json) {
+    public TelegramNotifier(UptimeWatchProperties properties, JsonMapper json) {
         this.config = properties.telegram();
         this.publicUrl = properties.publicUrl();
         this.json = json;

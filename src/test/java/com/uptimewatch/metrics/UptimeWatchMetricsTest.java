@@ -11,8 +11,8 @@ import com.uptimewatch.monitor.MonitorService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.micrometer.metrics.test.autoconfigure.AutoConfigureMetrics;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@AutoConfigureObservability // metrics exporters are off in tests unless requested
+@AutoConfigureMetrics // metrics exporters are off in tests unless requested
 @ActiveProfiles("test")
 class UptimeWatchMetricsTest {
 

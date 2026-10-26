@@ -1,7 +1,7 @@
 package com.uptimewatch.alert;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import com.sun.net.httpserver.HttpServer;
 import com.uptimewatch.config.UptimeWatchProperties;
 import org.junit.jupiter.api.AfterEach;
@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class TelegramNotifierTest {
 
-    private final ObjectMapper json = new ObjectMapper();
+    private final JsonMapper json = JsonMapper.builder().build();
     private final AtomicReference<String> path = new AtomicReference<>();
     private final AtomicReference<String> body = new AtomicReference<>();
     private HttpServer fakeTelegram;

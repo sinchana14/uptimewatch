@@ -96,7 +96,7 @@ Every push runs `.github/workflows/ci.yml`:
 3. **Full-stack smoke test**: builds the image, starts app + PostgreSQL + Prometheus + Grafana,
    then checks that the status page answers, the write API is protected, metrics are not public,
    Prometheus is scraping the app, and the Grafana dashboard loads
-4. **Trivy image scan**: HIGH/CRITICAL vulnerabilities with available fixes (report only for now)
+4. **Trivy image scan**: reports HIGH/CRITICAL vulnerabilities and **fails the build on any CRITICAL one that has a fix**
 5. **Publish**: on `main`, pushes `ghcr.io/sinchana14/uptimewatch:latest` and a `sha-xxxxxxx` tag
 
 ## Run locally without Docker
@@ -194,4 +194,4 @@ mvn test
 
 ## Tech stack
 
-Java 17 · Spring Boot 3 · Spring Data JPA · H2 / PostgreSQL · Micrometer · Prometheus · Grafana · Docker · GitHub Actions · Trivy · Vanilla JS · JUnit 5
+Java 17 · Spring Boot 4 · Spring Data JPA · H2 / PostgreSQL · Micrometer · Prometheus · Grafana · Docker · GitHub Actions · Trivy · Vanilla JS · JUnit 5

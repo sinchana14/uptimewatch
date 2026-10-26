@@ -83,11 +83,15 @@ jobs:
       - name: Show logs on failure
         if: failure()
         run: docker compose logs --no-color --tail 200
-      - name: Scan image for vulnerabilities (Trivy, report only)
-        if: always()
+      - name: Scan image for vulnerabilities (Trivy)
         run: |
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.56.2 \
-            image --severity HIGH,CRITICAL --ignore-unfixed --no-progress --exit-code 0 uptimewatch:local
+          trivy() {
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v trivy-cache:/root/.cache \
+              aquasec/trivy:0.56.2 image --ignore-unfixed --no-progress "$@" uptimewatch:local
+          }
+          # Report HIGH and CRITICAL findings, then fail the build on any fixable CRITICAL one.
+          trivy --severity HIGH,CRITICAL --exit-code 0
+          trivy --severity CRITICAL --exit-code 1 --quiet
       - name: Stop stack
         if: always()
         run: docker compose down -v
